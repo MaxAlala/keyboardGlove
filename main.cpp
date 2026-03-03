@@ -28,6 +28,9 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "usb_device.h"
+
+#include "usbd_hid.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -70,6 +73,25 @@ static void MX_ADC2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
+extern USBD_HandleTypeDef hUsbDeviceFS;
+typedef struct
+{
+	uint8_t MODIFIER;
+	uint8_t RESERVED;
+	uint8_t KEYCODE1;
+	uint8_t KEYCODE2;
+	uint8_t KEYCODE3;
+	uint8_t KEYCODE4;
+	uint8_t KEYCODE5;
+	uint8_t KEYCODE6;
+} keyboardHID;
+
+keyboardHID keyboardhid = {0,0,0,0,0,0,0,0};
+
+
+
 uint16_t readValue;
 uint16_t readValue2;
 
@@ -169,31 +191,54 @@ uint32_t ADC_Channels[3] = { ADC_CHANNEL_2, ADC_CHANNEL_3, ADC_CHANNEL_4 };
 //characters.push_back(Character("win", "2120"));
 //characters.push_back(Character("alt", "2121"));
 //characters.push_back(Character("space", "2122"));
+//
+//std::map<std::string, std::string> codeAndCharReversed { { "esc", "0000" }, {
+//		"f1", "0001" }, { "f2", "0002" }, { "f3", "0010" }, { "f4", "0011" }, {
+//		"f5", "0012" }, { "f6", "0020" }, { "f7", "0021" }, { "f8", "0022" }, {
+//		"f9", "0100" }, { "f10", "0101" }, { "f11", "0102" }, { "f12", "0110" },
+//		{ "PrScr", "0111" }, { "delete", "0112" }, { "~", "0120" }, { "1",
+//				"0121" }, { "2", "0122" }, { "3", "0200" }, { "4", "0201" }, {
+//				"5", "0202" }, { "6", "0210" }, { "7", "0211" },
+//		{ "8", "0212" }, { "9", "0220" }, { "0", "0221" }, { "-_", "0222" }, {
+//				"plus=", "1000" }, { "backspace", "1001" }, { "tab", "1002" }, {
+//				"q", "1010" }, { "w", "1011" }, { "e", "1012" },
+//		{ "r", "1020" }, { "t", "1021" }, { "y", "1022" }, { "u", "1100" }, {
+//				"i", "1101" }, { "o", "1102" }, { "p", "1110" },
+//		{ "{", "1111" }, { "}", "1112" }, { "| \\ /", "1120" },
+//		{ "caps", "1121" }, { "a", "1122" }, { "s", "1200" }, { "d", "1201" }, {
+//				"f", "1202" }, { "g", "1210" }, { "h", "1211" },
+//		{ "j", "1212" }, { "k", "1220" }, { "l", "1221" }, { ":;", "1222" }, {
+//				"\" \'", "2000" }, { "enter", "2001" }, { "shift", "2002" }, {
+//				"z", "2010" }, { "x", "2011" }, { "c", "2012" },
+//		{ "v", "2020" }, { "b", "2021" }, { "n", "2022" }, { "m", "2100" }, {
+//				"<,", "2101" }, { ">.", "2102" }, { "?/", "2110" }, { "ctrl",
+//				"2111" }, { "fn", "2112" }, { "win", "2120" },
+//		{ "alt", "2121" }, { "space", "2122" } };
 
-std::map<std::string, std::string> codeAndCharReversed { { "esc", "0000" }, {
-		"f1", "0001" }, { "f2", "0002" }, { "f3", "0010" }, { "f4", "0011" }, {
-		"f5", "0012" }, { "f6", "0020" }, { "f7", "0021" }, { "f8", "0022" }, {
-		"f9", "0100" }, { "f10", "0101" }, { "f11", "0102" }, { "f12", "0110" },
-		{ "PrScr", "0111" }, { "delete", "0112" }, { "~", "0120" }, { "1",
-				"0121" }, { "2", "0122" }, { "3", "0200" }, { "4", "0201" }, {
-				"5", "0202" }, { "6", "0210" }, { "7", "0211" },
-		{ "8", "0212" }, { "9", "0220" }, { "0", "0221" }, { "-_", "0222" }, {
-				"plus=", "1000" }, { "backspace", "1001" }, { "tab", "1002" }, {
-				"q", "1010" }, { "w", "1011" }, { "e", "1012" },
-		{ "r", "1020" }, { "t", "1021" }, { "y", "1022" }, { "u", "1100" }, {
-				"i", "1101" }, { "o", "1102" }, { "p", "1110" },
-		{ "{", "1111" }, { "}", "1112" }, { "| \\ /", "1120" },
-		{ "caps", "1121" }, { "a", "1122" }, { "s", "1200" }, { "d", "1201" }, {
-				"f", "1202" }, { "g", "1210" }, { "h", "1211" },
-		{ "j", "1212" }, { "k", "1220" }, { "l", "1221" }, { ":;", "1222" }, {
-				"\" \'", "2000" }, { "enter", "2001" }, { "shift", "2002" }, {
-				"z", "2010" }, { "x", "2011" }, { "c", "2012" },
-		{ "v", "2020" }, { "b", "2021" }, { "n", "2022" }, { "m", "2100" }, {
-				"<,", "2101" }, { ">.", "2102" }, { "?/", "2110" }, { "ctrl",
-				"2111" }, { "fn", "2112" }, { "win", "2120" },
-		{ "alt", "2121" }, { "space", "2122" } };
+std::map<std::string, std::string> codeAndCharReversedHID { { "41", "0000" }, {
+		"58", "0001" }, { "59", "0002" }, { "60", "0010" }, { "61", "0011" }, {
+		"62", "0012" }, { "63", "0020" }, { "64", "0021" }, { "65", "0022" }, {
+		"66", "0100" }, { "67", "0101" }, { "68", "0102" }, { "69", "0110" },
+		{ "70", "0111" }, { "76", "0112" }, { "50", "0120" }, { "30",
+				"0121" }, { "31", "0122" }, { "32", "0200" }, { "33", "0201" }, {
+				"34", "0202" }, { "35", "0210" }, { "36", "0211" },
+		{ "37", "0212" }, { "38", "0220" }, { "39", "0221" }, { "45", "0222" }, {
+				"46", "1000" }, { "42", "1001" }, { "43", "1002" }, {
+				"20", "1010" }, { "26", "1011" }, { "8", "1012" },
+		{ "21", "1020" }, { "23", "1021" }, { "28", "1022" }, { "24", "1100" }, {
+				"12", "1101" }, { "18", "1102" }, { "19", "1110" },
+		{ "47", "1111" }, { "48", "1112" }, { "49", "1120" },
+		{ "57", "1121" }, { "4", "1122" }, { "22", "1200" }, { "7", "1201" }, {
+				"9", "1202" }, { "10", "1210" }, { "11", "1211" },
+		{ "13", "1212" }, { "14", "1220" }, { "30", "1221" }, { "51", "1222" }, {
+				"52", "2000" }, { "88", "2001" }, { "225", "2002" }, {
+				"29", "2010" }, { "27", "2011" }, { "6", "2012" },
+		{ "25", "2020" }, { "5", "2021" }, { "17", "2022" }, { "16", "2100" }, {
+				"54", "2101" }, { "55", "2102" }, { "56", "2110" }, { "224",
+				"2111" }, { "999", "2112" }, { "227", "2120" },
+		{ "230", "2121" }, { "44", "2122" } };
 
-std::map<std::string, std::string> codeAndChar;
+std::map<std::string, std::string> codeAndCharHID;
 
 class Borders {
 public:
@@ -257,6 +302,7 @@ int main(void) {
 	MX_ADC1_Init();
 	MX_USART1_UART_Init();
 	MX_ADC2_Init();
+	  MX_USB_DEVICE_Init();
 	/* USER CODE BEGIN 2 */
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_Start(&hadc2);
@@ -267,14 +313,17 @@ int main(void) {
 //700 1500 2100 500-1200 1200-1800 1800-2300
 //900 1500 2100 500-1200 1200-1800 1800-2300
 //900 1500 2100 500-1200 1200-1800 1800-2300
+int changer1 = 000;
+int changer2 = 200;
+int changer3 = 0;
+int changer4 = 0;
+	borders.push_back(Borders(000+changer1, 900+changer1, 1000+changer1, 1800+changer1));
+	borders.push_back(Borders(000+changer2, 800+changer2, 1200+changer2, 2300+changer2));
+	borders.push_back(Borders(000+changer3, 1100+changer3, 1500+changer3, 2300+changer3));
+	borders.push_back(Borders(000+changer4, 800+changer4, 1200+changer4, 2300+changer4));
 
-	borders.push_back(Borders(500, 900, 1150, 1700));
-	borders.push_back(Borders(500, 1200, 1800, 2300));
-	borders.push_back(Borders(500, 1200, 1800, 2300));
-	borders.push_back(Borders(500, 1200, 1800, 2300));
-
-	for (const auto &pair : codeAndCharReversed) {
-		codeAndChar[pair.second] = pair.first;
+	for (const auto &pair : codeAndCharReversedHID) {
+		codeAndCharHID[pair.second] = pair.first;
 	}
 
 	/* USER CODE END 2 */
@@ -282,6 +331,24 @@ int main(void) {
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
+
+//		  keyboardhid.MODIFIER = 0x02;  // left shift pressed
+//		  keyboardhid.KEYCODE1 = 0x07;  // press 'a'
+//		  USBD_HID_SendReport(&hUsbDeviceFS, reinterpret_cast<uint8_t*>(&keyboardhid), sizeof (keyboardhid));
+//		  HAL_Delay (50);
+//		  keyboardhid.MODIFIER = 0x00;  // shift release
+//		  keyboardhid.KEYCODE1 = 0x00;  // release key
+//		  USBD_HID_SendReport(&hUsbDeviceFS, reinterpret_cast<uint8_t*>(&keyboardhid), sizeof (keyboardhid));
+//		  HAL_Delay (4000);
+//		  USBD_HID_SendReport(&hUsbDeviceFS, reinterpret_cast<uint8_t*>(&keyboardhid), sizeof (keyboardhid));
+//		  HAL_Delay (50);
+//		  keyboardhid.MODIFIER = 0x00;  // shift release
+//		  keyboardhid.KEYCODE1 = 0x00;  // release key
+//		  USBD_HID_SendReport(&hUsbDeviceFS, reinterpret_cast<uint8_t*>(&keyboardhid), sizeof (keyboardhid));
+//		  HAL_Delay (4000);
+
+		// detection char from 4+2 sensors=glove
+		if(1){
 		/* USER CODE END WHILE */
 		for (i = 0; i < 3; i++) {
 
@@ -298,20 +365,20 @@ int main(void) {
 				AD_RES[0] = HAL_ADC_GetValue(&hadc2); // Read The ADC Conversion Result
 		}
 
-		HAL_ADC_PollForConversion(&hadc1, 1000);
+		HAL_ADC_PollForConversion(&hadc1, 50);
 //	  readValue = HAL_ADC_GetValue(&hadc1);
 
 		AD_RES[2] = HAL_ADC_GetValue(&hadc1);
 
 		static bool shouldReadTwoCharPressed = 0;
 		static bool shouldReadOneChar = 0;
-
+		static bool wasShiftPressed = 0;
 		// If Touch is Detected
-		if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10)) {
-			shouldReadTwoCharPressed = 1;
-		} else {
-			shouldReadTwoCharPressed = 0;
-		}
+//		if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10)) {
+//			shouldReadTwoCharPressed = 1;
+//		} else {
+//			shouldReadTwoCharPressed = 0;
+//		}
 
 		// If Touch is Detected
 		if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_11)) {
@@ -320,79 +387,80 @@ int main(void) {
 			shouldReadOneChar = 0;
 		}
 
-		static bool wasReadingMultipleCharsStarted = 0;
-		static std::map<std::string, std::string> multipleCharsToSendMap;
-		static std::string multipleCharsToSendString;
+//		static bool wasReadingMultipleCharsStarted = 0;
+//		static std::map<std::string, std::string> multipleCharsToSendMap;
+//		static std::string multipleCharsToSendString;
 		static std::string currentChar;
-		static std::vector<std::string> insertion_order_keys;
+//		static std::vector<std::string> insertion_order_keys;
 		static bool shouldShowDebug = false;
 		// is
-		static int counterOfReadTwoChar = 0;
+//		static int counterOfReadTwoChar = 0;
 		static int counterOfReadOneChar = 0;
 
-		if (shouldReadTwoCharPressed == 1)
-			counterOfReadTwoChar++;
-		else {
-			// if button was unpressed
-			counterOfReadTwoChar = 0;
-		}
+//		if (shouldReadTwoCharPressed == 1)
+//			counterOfReadTwoChar++;
+//		else {
+//			// if button was unpressed
+//			counterOfReadTwoChar = 0;
+//		}
 
 		// button was pressed just now
-		if (counterOfReadTwoChar == 1) {
-			// ends of reading multiple chars because button was already pressed before = second time button was pressed
-			if (wasReadingMultipleCharsStarted == 1) {
-				wasReadingMultipleCharsStarted = 0;
-				if (multipleCharsToSendMap.empty())
-					continue;
+//		if (counterOfReadTwoChar == 1) {
+//			// ends of reading multiple chars because button was already pressed before = second time button was pressed
+//			if (wasReadingMultipleCharsStarted == 1) {
+//				wasReadingMultipleCharsStarted = 0;
+//				if (multipleCharsToSendMap.empty())
+//					continue;
+//
+//
+//				multipleCharsToSendString = "";
+//				//
+//				for (const auto &pair : insertion_order_keys) {
+//					sendMessageFromISRWithNewLine(multipleCharsToSendMap[pair]);
+//					multipleCharsToSendString += multipleCharsToSendMap[pair];
+//				}
+//
+//				//send finished chars
+//				sendMessageFromISRWithNewLine("chars as single sttring="+multipleCharsToSendString);
+//
+//				multipleCharsToSendString = "";
+//				multipleCharsToSendMap.clear();
+//				insertion_order_keys.clear();
+//			} else {
+//				// starts reading multiple chars
+//				wasReadingMultipleCharsStarted = 1;
+//			}
+//		}
 
+//		sendMessageFromISRWithNewLine("map vals=");
 
-				multipleCharsToSendString = "";
-				for (const auto &pair : insertion_order_keys) {
-					sendMessageFromISRWithNewLine(multipleCharsToSendMap[pair]);
-					multipleCharsToSendString += multipleCharsToSendMap[pair];
-				}
-
-				//send finished chars
-				sendMessageFromISRWithNewLine("chars as single sttring="+multipleCharsToSendString);
-
-				multipleCharsToSendString = "";
-				multipleCharsToSendMap.clear();
-				insertion_order_keys.clear();
-			} else {
-				// starts reading multiple chars
-				wasReadingMultipleCharsStarted = 1;
-			}
-		}
-
-		sendMessageFromISRWithNewLine("map vals=");
-
-		for (const auto &pair : insertion_order_keys) {
-			sendMessageFromISRWithNewLine(multipleCharsToSendMap[pair]);
-		}
-
-		if (shouldShowDebug) {
-
-			for (const auto &pair : insertion_order_keys) {
-				multipleCharsToSendString += multipleCharsToSendMap[pair];
-			}
-
-			sendMessageFromISRWithNewLine("current multipleCharsToSend=");
-			sendMessageFromISRWithNewLine(multipleCharsToSendString);
-			multipleCharsToSendString = "";
-		}
-
-		if (shouldShowDebug) {
-			sendMessageFromISRWithNewLine("fingers vals=");
-			sendMessageFromISRWithNewLine(AD_RES[0]);
-			sendMessageFromISRWithNewLine(AD_RES[1]);
-			sendMessageFromISRWithNewLine(AD_RES[2]);
-			sendMessageFromISRWithNewLine(AD_RES[3]);
-		}
+//		for (const auto &pair : insertion_order_keys) {
+//			sendMessageFromISRWithNewLine(multipleCharsToSendMap[pair]);
+//		}
+//
+//		if (shouldShowDebug) {
+//
+//			for (const auto &pair : insertion_order_keys) {
+//				multipleCharsToSendString += multipleCharsToSendMap[pair];
+//			}
+//
+//			sendMessageFromISRWithNewLine("current multipleCharsToSend=");
+//			sendMessageFromISRWithNewLine(multipleCharsToSendString);
+//			multipleCharsToSendString = "";
+//		}
+//
+//		if (shouldShowDebug) {
+//			sendMessageFromISRWithNewLine("fingers vals=");
+//			sendMessageFromISRWithNewLine(AD_RES[0]);
+//			sendMessageFromISRWithNewLine(AD_RES[1]);
+//			sendMessageFromISRWithNewLine(AD_RES[2]);
+//			sendMessageFromISRWithNewLine(AD_RES[3]);
+//		}
 
 
 		for (int i = 0; i < borders.size(); i++) {
 			borders.at(i).setState(AD_RES[i]);
-//			sendMessageFromISRWithNewLine(borders.at(i).getState());
+			sendMessageFromISRWithNewLine(borders.at(i).getState());
 		}
 
 		//states as single string + send
@@ -408,9 +476,17 @@ int main(void) {
 			counterOfReadOneChar = 0;
 		}
 
-		// if button was pressed change curChar + send it + connect to multiCharIf corresponding button was pressed
+		// if button was pressed change curChar + send it
 		if (counterOfReadOneChar == 1) {
-			currentChar = codeAndChar[statesString];
+			currentChar = codeAndCharHID[statesString];
+
+			if(currentChar == "225"){
+
+				if(wasShiftPressed)
+					wasShiftPressed =0;
+				else
+					wasShiftPressed =1;
+			}
 
 			if (shouldShowDebug) {
 				// send char
@@ -421,25 +497,46 @@ int main(void) {
 				}
 			}
 
-			// add a new char to a multipleChar map
-			if (wasReadingMultipleCharsStarted) {
+			//send char
 
-				// if there is no such elem
-				if (multipleCharsToSendMap.find(statesString)
-						== multipleCharsToSendMap.end()) {
+			//not shift
+			if(currentChar != "225") {
 
-					insertion_order_keys.push_back(statesString);
-					multipleCharsToSendMap[statesString] =
-							codeAndChar[statesString];
-
-					sendMessageFromISRWithNewLine(
-							"Newval added"
-									+ multipleCharsToSendMap[statesString]);
+				if(wasShiftPressed) {
+					  keyboardhid.MODIFIER = 0x02;  // left shift pressed
+				}else{
+					  keyboardhid.MODIFIER = 0x00;  // left shift pressed
 				}
+					  keyboardhid.KEYCODE1 = std::stoi(currentChar);  // press 'a'
+					  USBD_HID_SendReport(&hUsbDeviceFS, reinterpret_cast<uint8_t*>(&keyboardhid), sizeof (keyboardhid));
+					  HAL_Delay (50);
+					  keyboardhid.MODIFIER = 0x00;  // shift release
+					  keyboardhid.KEYCODE1 = 0x00;  // release key
+					  USBD_HID_SendReport(&hUsbDeviceFS, reinterpret_cast<uint8_t*>(&keyboardhid), sizeof (keyboardhid));
+					  HAL_Delay (50);
+
 			}
+			// add a new char to a multipleChar map
+//			if (wasReadingMultipleCharsStarted) {
+//
+//				// if there is no such elem
+////				if (multipleCharsToSendMap.find(statesString)
+////						== multipleCharsToSendMap.end()) {
+//
+//					insertion_order_keys.push_back(statesString);
+//					multipleCharsToSendMap[statesString] =
+//							codeAndChar[statesString];
+//
+//					sendMessageFromISRWithNewLine(
+//							"Newval added"
+//									+ multipleCharsToSendMap[statesString]);
+////				}
+//			}
 		}
 
-		sendMessageFromISRWithNewLine("current char="+codeAndChar[statesString]);
+		if (shouldShowDebug) {
+//			sendMessageFromISRWithNewLine("current char="+codeAndChar[statesString]);
+		}
 
 		if (shouldShowDebug) {
 			sendMessageFromISRWithNewLine("buttons="+std::to_string(shouldReadOneChar)+std::to_string(shouldReadTwoCharPressed));
@@ -453,9 +550,13 @@ int main(void) {
 
 //	  HAL_UART_Transmit(&huart1, (uint8_t*)"Ni Hao \n", strlen("Ni Hao \n"), 100);
 //	  printf("qwe rty \n");
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		HAL_Delay(200);
+
 		/* USER CODE BEGIN 3 */
+
+
+		}
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		HAL_Delay(10);
 	}
 	/* USER CODE END 3 */
 }
